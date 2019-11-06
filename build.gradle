@@ -20,7 +20,8 @@ allprojects {
         google()
         jcenter()
         maven {
-            url local_repo
+//            url local_repo
+            url "https://raw.githubusercontent.com/lTBeL/repo/master/repository"
         }
     }
 }
