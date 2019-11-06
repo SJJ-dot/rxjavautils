@@ -1,0 +1,2 @@
+include ':app', ':rxjava-dispose'
+rootProject.name='rxjava-utils'
