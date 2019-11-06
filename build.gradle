@@ -14,12 +14,14 @@ buildscript {
         // in the individual module build.gradle files
     }
 }
-
+ext.local_repo = new File(rootDir.parentFile,"repo/repository").toURI()
 allprojects {
     repositories {
         google()
         jcenter()
-
+        maven {
+            url local_repo
+        }
     }
 }
 

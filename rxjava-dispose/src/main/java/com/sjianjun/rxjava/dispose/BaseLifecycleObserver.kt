@@ -7,10 +7,13 @@ import io.reactivex.disposables.Disposable
 import java.util.concurrent.ConcurrentHashMap
 
 private val map = ConcurrentHashMap<String, BaseLifecycleObserver>()
-class BaseLifecycleObserver(val disposable: Disposable,
-                            private val lifecycle: Lifecycle,
-                            private val key: String? = null,
-                            private val event: Lifecycle.Event = Lifecycle.Event.ON_DESTROY) :
+
+class BaseLifecycleObserver(
+    val disposable: Disposable,
+    private val lifecycle: Lifecycle,
+    private val key: String? = null,
+    private val event: Lifecycle.Event = Lifecycle.Event.ON_DESTROY
+) :
     LifecycleObserver {
     init {
         if (key != null) {
