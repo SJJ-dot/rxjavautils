@@ -2,7 +2,7 @@ package com.sjianjun.rxjava.demo
 
 import android.annotation.SuppressLint
 import android.os.Bundle
-import android.support.v7.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatActivity
 import com.sjianjun.rxjava.dispose.AutoDispose
 import com.sjianjun.rxjava.dispose.pause
 import io.reactivex.Observable
