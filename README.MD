@@ -15,6 +15,8 @@ allprojects {
 dependencies {
     ...
     implementation 'com.sjianjun:rxjava-dispose:1.1.0'
+    //or androidx
+    implementation 'com.sjianjun:rxjava-dispose:1.2.0'
 }
 ```
 
