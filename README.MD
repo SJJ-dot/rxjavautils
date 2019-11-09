@@ -10,6 +10,9 @@ allprojects {
     }
 }
 ```
+## rxjava 取消订阅封装。
+- 可自动在生命周期destroy stop pause 时取消
+- 定义key 在自动取消之前存在的key。**注意：**key必须在整个进程中唯一
 ### 添加依赖
 ```groovy
 dependencies {
@@ -50,4 +53,21 @@ class MainActivity : AppCompatActivity(),AutoDispose {
             }
     }
 }
+```
+
+## rxjava 协程调度器扩展。拥有更好的并发性能。
+
+### 添加依赖
+```groovy
+dependencies {
+    ...
+    implementation 'com.sjianjun:rxjava-coroutine-scheduler:0.0.5'
+}
+```
+
+### 示例代码。用法与普通的调度器相同
+```kotlin
+Observable.just("test key2")
+    .delay(10000,TimeUnit.MILLISECONDS, CoroutineScheduler.IO)
+
 ```

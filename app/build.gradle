@@ -35,6 +35,6 @@ dependencies {
     implementation 'com.sjianjun:rxjava-dispose:1.2.0'
 
     //kotlin 🌿协程调度器。并发性能更高一点。
-//    implementation 'com.sjianjun:rxjava-coroutine-scheduler:0.0.4'
-    implementation project(":rxjava-coroutine-scheduler")
+    implementation 'com.sjianjun:rxjava-coroutine-scheduler:0.0.5'
+//    implementation project(":rxjava-coroutine-scheduler")
 }
