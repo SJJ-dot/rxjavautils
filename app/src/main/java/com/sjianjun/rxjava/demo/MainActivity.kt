@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.sjianjun.rxjava.dispose.AutoDispose
 import com.sjianjun.rxjava.dispose.pause
+import com.sjianjun.rxjava.scheduler.CoroutineScheduler
 import io.reactivex.Observable
 import sjj.alog.Log
 import java.util.concurrent.TimeUnit
@@ -18,7 +19,7 @@ class MainActivity : AppCompatActivity(),AutoDispose {
 
         Log.e("test")
         Observable.just("test key")
-            .delay(2000, TimeUnit.MILLISECONDS)
+            .delay(2000,TimeUnit.MILLISECONDS, CoroutineScheduler.IO)
             .doOnDispose {
                 Log.e("doOnDispose test key")
             }
@@ -27,7 +28,7 @@ class MainActivity : AppCompatActivity(),AutoDispose {
                 Log.e(it)
             }
         Observable.just("test key2")
-            .delay(10000, TimeUnit.MILLISECONDS)
+            .delay(10000,TimeUnit.MILLISECONDS, CoroutineScheduler.IO)
             .doOnDispose {
                 Log.e("doOnDispose test key2")
             }

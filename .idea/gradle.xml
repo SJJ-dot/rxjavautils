@@ -9,6 +9,7 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/app" />
+            <option value="$PROJECT_DIR$/rxjava-coroutine-scheduler" />
             <option value="$PROJECT_DIR$/rxjava-dispose" />
           </set>
         </option>

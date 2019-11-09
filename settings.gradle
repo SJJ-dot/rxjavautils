@@ -1,2 +1,2 @@
-include ':app', ':rxjava-dispose'
+include ':app', ':rxjava-dispose', ':rxjava-coroutine-scheduler'
 rootProject.name='rxjava-utils'
