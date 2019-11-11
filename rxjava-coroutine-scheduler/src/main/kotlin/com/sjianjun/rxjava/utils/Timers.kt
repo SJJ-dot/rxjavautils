@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.math.max
 
 object Timers {
-    var defaultScheduler = CoroutineScheduler.Default
+    var defaultScheduler:Scheduler = CoroutineScheduler.Default
     @JvmStatic
     @JvmOverloads
     fun submit(
