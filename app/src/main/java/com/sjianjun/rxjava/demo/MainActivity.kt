@@ -127,5 +127,17 @@ class MainActivity : AppCompatActivity(), AutoDispose {
                 Log.e("${count1.get()}period ${Thread.currentThread()} is UI thread ${Looper.getMainLooper().thread == Thread.currentThread()}")
             }
         }, 2000, 2000).pause()
+
+    }
+
+    private fun launch( count:Int) {
+        CoroutineScope(Dispatchers.IO).launch {
+            Log.e("launch $count")
+        }
+    }
+    private fun async( count:Int) {
+        CoroutineScope(Dispatchers.IO).async {
+            Log.e("async $count")
+        }
     }
 }
