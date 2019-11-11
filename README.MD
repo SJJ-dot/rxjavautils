@@ -19,7 +19,7 @@ dependencies {
     ...
     implementation 'com.sjianjun:rxjava-dispose:1.1.0'
     //or androidx
-    implementation 'com.sjianjun:rxjava-dispose:1.2.0'
+    implementation 'com.sjianjun:rxjava-dispose:1.2.1'
 }
 ```
 
@@ -61,7 +61,7 @@ class MainActivity : AppCompatActivity(),AutoDispose {
 ```groovy
 dependencies {
     ...
-    implementation 'com.sjianjun:rxjava-coroutine-scheduler:0.0.5'
+    implementation 'com.sjianjun:rxjava-coroutine-scheduler:0.0.7'
 }
 ```
 
