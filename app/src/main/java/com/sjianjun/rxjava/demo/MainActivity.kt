@@ -11,6 +11,9 @@ import com.sjianjun.rxjava.utils.Timers
 import io.reactivex.Observable
 import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import sjj.alog.Log
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
@@ -30,23 +33,30 @@ class MainActivity : AppCompatActivity(), AutoDispose {
     private fun coroutineSchedulerConcurrentTest() {
         concurrent_test.setOnClickListener {
             val count1 = AtomicInteger()
-
-            (0..5).forEach {
-                Observable.just("测试Observable扩展绑定生命周期$it :")
-                    .delay(10000, TimeUnit.MILLISECONDS, CoroutineScheduler.IO)
-                    .subscribe {
-                        Log.e(it + Thread.currentThread())
-                        count1.incrementAndGet()
+            CoroutineScope(Dispatchers.IO).launch {
+                (0 until 2000).forEach {index->
+                    CoroutineScope(Dispatchers.IO).launch {
+                        Observable.just("测试Observable扩展绑定生命周期$index :")
+                            .delay(5000, TimeUnit.MILLISECONDS, CoroutineScheduler.Default)
+                            .subscribe {
+                                Log.e("${Thread.currentThread()} ${Thread.currentThread().id}")
+                                var i = 0.0
+                                var max: Int = (Math.random() * 10000).toInt()
+                                (0 until max).forEach {
+                                    i += Math.random()
+                                }
+                                count1.incrementAndGet()
+                            }
                     }
+                }
             }
 
+
             var count = 0
-            Timers.defaultScheduler =Schedulers.computation()
+            Timers.defaultScheduler = Schedulers.computation()
             Timers.submit({
-                if (++count < 8) {
-                    Log.e("${count1.get()}period ${Thread.currentThread()} is UI thread ${Looper.getMainLooper().thread == Thread.currentThread()}")
-                }
-            }, 2000, 2000).pause()
+                Log.e("${count1.get()}period ${Thread.currentThread()} is UI thread ${Looper.getMainLooper().thread == Thread.currentThread()}")
+            }, 2000, 2000).pause("coroutineSchedulerConcurrentTest")
         }
     }
 

@@ -7,7 +7,6 @@ import io.reactivex.internal.disposables.SequentialDisposable
 import io.reactivex.plugins.RxJavaPlugins
 import kotlinx.coroutines.*
 import java.util.concurrent.CountDownLatch
-import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
@@ -23,11 +22,7 @@ class CoroutineScheduler(private val context: CoroutineContext = Dispatchers.IO)
         @Volatile
         private var disposed: Boolean = false
         private val coroutine = CoroutineScope(context)
-        /**
-         * delay thread
-         */
-        private val delayThread = Executors.newScheduledThreadPool(1).asCoroutineDispatcher()
-        private val delayCoroutine = CoroutineScope(delayThread)
+        private val delayCoroutine = CoroutineScope(Dispatchers.Unconfined)
 
         private val seqCountDownLatch = AtomicReference<CountDownLatch?>()
         override fun schedule(runnable: Runnable): Disposable {
@@ -69,7 +64,6 @@ class CoroutineScheduler(private val context: CoroutineContext = Dispatchers.IO)
             }
             val sequentialDisposable = SequentialDisposable()
             val decoratedRun = ScheduledRunnable(RxJavaPlugins.onSchedule(runnable))
-
             val job = delayCoroutine.launch {
                 try {
                     if (l > 0) {
@@ -92,11 +86,6 @@ class CoroutineScheduler(private val context: CoroutineContext = Dispatchers.IO)
                 disposed = true
                 coroutine.cancel()
                 delayCoroutine.cancel()
-                try {
-                    delayThread.close()
-                } catch (e: Throwable) {
-                    e.printStackTrace()
-                }
             }
         }
 
@@ -151,6 +140,9 @@ class CoroutineScheduler(private val context: CoroutineContext = Dispatchers.IO)
 
         @JvmStatic
         val Default by lazy { CoroutineScheduler(Dispatchers.Default) }
+
+        @JvmStatic
+        val Unconfined by lazy { CoroutineScheduler(Dispatchers.Unconfined) }
     }
 
 }

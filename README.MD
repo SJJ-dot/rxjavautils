@@ -61,7 +61,7 @@ class MainActivity : AppCompatActivity(),AutoDispose {
 ```groovy
 dependencies {
     ...
-    implementation 'com.sjianjun:rxjava-coroutine-scheduler:0.0.8'
+    implementation 'com.sjianjun:rxjava-coroutine-scheduler:0.0.9'
 }
 ```
 
