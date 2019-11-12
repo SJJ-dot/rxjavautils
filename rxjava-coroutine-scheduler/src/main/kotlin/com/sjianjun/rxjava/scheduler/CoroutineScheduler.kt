@@ -133,16 +133,16 @@ class CoroutineScheduler(private val context: CoroutineContext = Dispatchers.IO)
 
     companion object {
         @JvmStatic
-        val IO by lazy { CoroutineScheduler(Dispatchers.IO) }
+        val IO = CoroutineScheduler(Dispatchers.IO)
 
         @JvmStatic
-        val Main by lazy { CoroutineScheduler(Dispatchers.Main) }
+        val Main = CoroutineScheduler(Dispatchers.Main)
 
         @JvmStatic
-        val Default by lazy { CoroutineScheduler(Dispatchers.Default) }
+        val Default = CoroutineScheduler(Dispatchers.Default)
 
         @JvmStatic
-        val Unconfined by lazy { CoroutineScheduler(Dispatchers.Unconfined) }
+        val Unconfined = CoroutineScheduler(Dispatchers.Unconfined)
     }
 
 }

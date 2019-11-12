@@ -9,7 +9,7 @@ import com.sjianjun.rxjava.dispose.pause
 import com.sjianjun.rxjava.scheduler.CoroutineScheduler
 import com.sjianjun.rxjava.utils.Timers
 import io.reactivex.Observable
-import io.reactivex.schedulers.Schedulers
+import io.reactivex.android.schedulers.AndroidSchedulers
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -27,6 +27,25 @@ class MainActivity : AppCompatActivity(), AutoDispose {
 
         testLifecycleBindDispose()
         coroutineSchedulerConcurrentTest()
+
+
+        timers.setOnClickListener {
+            Timers.DEFAULT.submit({
+                Log.e("test1 ${Thread.currentThread()}")
+                Timers.DEFAULT.submit({
+                    Log.e("test2 ${Thread.currentThread()}")
+                    Timers.DEFAULT.scheduler = AndroidSchedulers.mainThread()
+                    Timers.DEFAULT.submit({
+                        Log.e("test3 ${Thread.currentThread()} is UI thread: ${Looper.getMainLooper().thread == Thread.currentThread()}")
+                    },200L,200L).pause("timers 1")
+                },200L)
+            })
+
+            Timers.Main.submit({
+                Log.e("testMain ${Thread.currentThread()} is UI thread: ${Looper.getMainLooper().thread == Thread.currentThread()}")
+            }).pause("timers")
+        }
+
     }
 
 
@@ -34,7 +53,7 @@ class MainActivity : AppCompatActivity(), AutoDispose {
         concurrent_test.setOnClickListener {
             val count1 = AtomicInteger()
             CoroutineScope(Dispatchers.IO).launch {
-                (0 until 2000).forEach {index->
+                (0 until 2000).forEach { index ->
                     CoroutineScope(Dispatchers.IO).launch {
                         Observable.just("测试Observable扩展绑定生命周期$index :")
                             .delay(5000, TimeUnit.MILLISECONDS, CoroutineScheduler.Default)
@@ -52,9 +71,7 @@ class MainActivity : AppCompatActivity(), AutoDispose {
             }
 
 
-            var count = 0
-            Timers.defaultScheduler = Schedulers.computation()
-            Timers.submit({
+            Timers.DEFAULT.submit({
                 Log.e("${count1.get()}period ${Thread.currentThread()} is UI thread ${Looper.getMainLooper().thread == Thread.currentThread()}")
             }, 2000, 2000).pause("coroutineSchedulerConcurrentTest")
         }
