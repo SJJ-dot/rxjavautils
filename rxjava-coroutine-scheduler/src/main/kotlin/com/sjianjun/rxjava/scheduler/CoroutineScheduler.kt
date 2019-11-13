@@ -6,6 +6,7 @@ import io.reactivex.internal.disposables.EmptyDisposable
 import io.reactivex.internal.disposables.SequentialDisposable
 import io.reactivex.plugins.RxJavaPlugins
 import kotlinx.coroutines.*
+import java.util.*
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -111,7 +112,8 @@ class CoroutineScheduler(private val context: CoroutineContext = Dispatchers.IO)
     }
 
     private class ScheduledRunnable(
-        val actual: Runnable
+        val actual: Runnable,
+        val time: Long = 0
     ) : AtomicBoolean(), Runnable, Disposable {
         override fun isDisposed(): Boolean = get()
 
@@ -128,6 +130,29 @@ class CoroutineScheduler(private val context: CoroutineContext = Dispatchers.IO)
             } finally {
                 lazySet(true)
             }
+        }
+    }
+
+    private class SeqQueue : LinkedList<ScheduledRunnable>() {
+        override fun add(element: ScheduledRunnable): Boolean {
+            if (size > 0) {
+                synchronized(this) {
+                    var index = size - 1
+                    while (index >= 0) {
+                        if (element.time >= get(index).time) {
+                            index++
+                            break
+                        } else if (index == 0) {
+                            break
+                        }
+
+                        index--
+                    }
+                    super.add(index, element)
+                    return true
+                }
+            }
+            return super.add(element)
         }
     }
 

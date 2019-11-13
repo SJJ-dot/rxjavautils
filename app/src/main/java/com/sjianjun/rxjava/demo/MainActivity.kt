@@ -11,9 +11,7 @@ import com.sjianjun.rxjava.utils.Timers
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import kotlinx.android.synthetic.main.activity_main.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import sjj.alog.Log
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
@@ -27,7 +25,7 @@ class MainActivity : AppCompatActivity(), AutoDispose {
 
         testLifecycleBindDispose()
         coroutineSchedulerConcurrentTest()
-
+        coroutineSchedulerConcurrentTest2()
 
         timers.setOnClickListener {
             Timers.DEFAULT.submit({
@@ -37,8 +35,8 @@ class MainActivity : AppCompatActivity(), AutoDispose {
                     Timers.DEFAULT.scheduler = AndroidSchedulers.mainThread()
                     Timers.DEFAULT.submit({
                         Log.e("test3 ${Thread.currentThread()} is UI thread: ${Looper.getMainLooper().thread == Thread.currentThread()}")
-                    },200L,200L).pause("timers 1")
-                },200L)
+                    }, 200L, 200L).pause("timers 1")
+                }, 200L)
             })
 
             Timers.Main.submit({
@@ -48,17 +46,20 @@ class MainActivity : AppCompatActivity(), AutoDispose {
 
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        timerJob?.cancel()
+    }
 
     private fun coroutineSchedulerConcurrentTest() {
         concurrent_test.setOnClickListener {
             val count1 = AtomicInteger()
             CoroutineScope(Dispatchers.IO).launch {
-                (0 until 2000).forEach { index ->
+                (0 until 20000).forEach { index ->
                     CoroutineScope(Dispatchers.IO).launch {
                         Observable.just("测试Observable扩展绑定生命周期$index :")
-                            .delay(5000, TimeUnit.MILLISECONDS, CoroutineScheduler.Default)
+                            .delay(5000, TimeUnit.MILLISECONDS, CoroutineScheduler.IO)
                             .subscribe {
-                                Log.e("${Thread.currentThread()} ${Thread.currentThread().id}")
                                 var i = 0.0
                                 var max: Int = (Math.random() * 10000).toInt()
                                 (0 until max).forEach {
@@ -71,9 +72,44 @@ class MainActivity : AppCompatActivity(), AutoDispose {
             }
 
 
-            Timers.DEFAULT.submit({
+            Timers.Main.submit({
                 Log.e("${count1.get()}period ${Thread.currentThread()} is UI thread ${Looper.getMainLooper().thread == Thread.currentThread()}")
             }, 2000, 2000).pause("coroutineSchedulerConcurrentTest")
+        }
+    }
+
+    private var timerJob: Job? = null
+
+    private fun coroutineSchedulerConcurrentTest2() {
+        concurrent_test2.setOnClickListener {
+            val count = AtomicInteger()
+            CoroutineScope(Dispatchers.IO).launch {
+                (0 until 20000).forEach {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        CoroutineScope(Dispatchers.Unconfined).launch {
+                            delay(2000)
+                            var i = 0.0
+                            var max: Int = (Math.random() * 10000).toInt()
+                            (0 until max).forEach {
+                                i += Math.random()
+                            }
+                            count.getAndAdd(1)
+
+                        }
+                    }
+                }
+            }
+            rrr(count)
+        }
+    }
+
+    fun rrr(count: AtomicInteger) {
+        timerJob = CoroutineScope(Dispatchers.Unconfined).launch {
+            delay(2000)
+            withContext(Dispatchers.Main) {
+                Log.e("${count.get()} period ${Thread.currentThread()} is UI thread ${Looper.getMainLooper().thread == Thread.currentThread()}")
+                rrr(count)
+            }
         }
     }
 

@@ -23,12 +23,20 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/dispose_test" />
 
+
+    <Button
+        android:id="@+id/concurrent_test2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="协程并发测试"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/concurrent_test" />
     <Button
         android:id="@+id/timers"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="测试定时器"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/concurrent_test" />
+        app:layout_constraintTop_toBottomOf="@+id/concurrent_test2" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
