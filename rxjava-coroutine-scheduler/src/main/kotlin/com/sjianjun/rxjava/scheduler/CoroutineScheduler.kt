@@ -4,13 +4,16 @@ import io.reactivex.Scheduler
 import io.reactivex.disposables.Disposable
 import io.reactivex.internal.disposables.EmptyDisposable
 import io.reactivex.internal.disposables.SequentialDisposable
+import io.reactivex.internal.queue.MpscLinkedQueue
 import io.reactivex.plugins.RxJavaPlugins
 import kotlinx.coroutines.*
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.CoroutineContext
+import kotlin.math.max
 
 class CoroutineScheduler(private val context: CoroutineContext = Dispatchers.IO) : Scheduler() {
 
@@ -23,9 +26,12 @@ class CoroutineScheduler(private val context: CoroutineContext = Dispatchers.IO)
         @Volatile
         private var disposed: Boolean = false
         private val coroutine = CoroutineScope(context)
-        private val delayCoroutine = CoroutineScope(Dispatchers.Unconfined)
-
         private val seqCountDownLatch = AtomicReference<CountDownLatch?>()
+        private val queue: MpscLinkedQueue<ScheduledRunnable> = MpscLinkedQueue()
+        private val tempQueue: MpscLinkedQueue<ScheduledRunnable> = MpscLinkedQueue()
+        private var wip = AtomicInteger()
+        private val coroutineDelay = AtomicBoolean(false)
+
         override fun schedule(runnable: Runnable): Disposable {
             if (isDisposed) {
                 return EmptyDisposable.INSTANCE
@@ -64,21 +70,86 @@ class CoroutineScheduler(private val context: CoroutineContext = Dispatchers.IO)
                 return EmptyDisposable.INSTANCE
             }
             val sequentialDisposable = SequentialDisposable()
-            val decoratedRun = ScheduledRunnable(RxJavaPlugins.onSchedule(runnable))
-            val job = delayCoroutine.launch {
-                try {
-                    if (l > 0) {
-                        delay(timeUnit.toMillis(l))
+            val decoratedRun = ScheduledRunnable(RxJavaPlugins.onSchedule(runnable), timeUnit.toMillis(l) + System.currentTimeMillis())
+
+            queue.offer(decoratedRun)
+            if (wip.getAndIncrement() == 0 || coroutineDelay.get() && coroutineDelay.compareAndSet(true, false)) {
+                coroutine.launch {
+                    var missed = 1
+                    val q = queue;
+                    while (true) {
+                        if (disposed) {
+                            q.clear()
+                            return@launch
+                        }
+
+                        while (true) {
+                            var delay = 0L
+                            while (true) {
+                                val run = q.poll() ?: break
+                                if (!run.get()) {
+                                    val difTime = run.time - System.currentTimeMillis()
+
+                                    if (difTime > 0) {
+                                        tempQueue.offer(run)
+                                        delay = max(difTime, delay)
+                                    } else {
+                                        sequentialDisposable.replace(schedule(run))
+                                    }
+                                    if (disposed) {
+                                        q.clear()
+                                        return@launch
+                                    }
+                                }
+
+                            }
+
+                            val count = wip.get()
+
+                            while (true) {
+                                val run = tempQueue.poll() ?: break
+                                q.offer(run)
+                            }
+
+                            if (disposed) {
+                                q.clear()
+                                return@launch
+                            }
+
+                            if (wip.get() != count) {
+                                continue
+                            }
+
+                            if (delay == 0L) {
+                                break
+                            } else {
+                                try {
+                                    coroutineDelay.lazySet(true)
+                                    delay(delay)
+                                    if (!coroutineDelay.compareAndSet(true, false)) {
+                                        return@launch
+                                    }
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                }
+                            }
+
+                            if (disposed) {
+                                q.clear()
+                                return@launch
+                            }
+                        }
+
+
+                        missed = wip.addAndGet(-missed)
+                        if (missed == 0) {
+                            return@launch
+                        }
+
                     }
-                    sequentialDisposable.replace(schedule(decoratedRun))
-                } catch (e: CancellationException) {
-//                    nothing to do
-                    e.printStackTrace()
-                } catch (e: Throwable) {
-                    RxJavaPlugins.onError(e)
                 }
             }
-            sequentialDisposable.replace(CoroutineDispose(job, decoratedRun))
+            sequentialDisposable.replace(decoratedRun)
             return sequentialDisposable
         }
 
@@ -86,7 +157,6 @@ class CoroutineScheduler(private val context: CoroutineContext = Dispatchers.IO)
             if (!disposed) {
                 disposed = true
                 coroutine.cancel()
-                delayCoroutine.cancel()
             }
         }
 
@@ -112,7 +182,8 @@ class CoroutineScheduler(private val context: CoroutineContext = Dispatchers.IO)
     }
 
     private class ScheduledRunnable(
-        val actual: Runnable
+        val actual: Runnable,
+        val time: Long = 0
     ) : AtomicBoolean(), Runnable, Disposable {
         override fun isDisposed(): Boolean = get()
 
