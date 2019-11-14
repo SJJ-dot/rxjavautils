@@ -74,7 +74,7 @@ class MainActivity : AppCompatActivity(), AutoDispose {
 
             Timers.Main.submit({
                 Log.e("${count1.get()}period ${Thread.currentThread()} is UI thread ${Looper.getMainLooper().thread == Thread.currentThread()}")
-            }, 2000, 2000).pause("coroutineSchedulerConcurrentTest")
+            }, 0, 2000).pause("coroutineSchedulerConcurrentTest")
         }
     }
 

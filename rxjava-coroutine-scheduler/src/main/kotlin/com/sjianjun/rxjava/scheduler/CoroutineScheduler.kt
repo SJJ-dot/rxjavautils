@@ -4,17 +4,16 @@ import io.reactivex.Scheduler
 import io.reactivex.disposables.Disposable
 import io.reactivex.internal.disposables.EmptyDisposable
 import io.reactivex.internal.disposables.SequentialDisposable
-import io.reactivex.internal.queue.MpscLinkedQueue
 import io.reactivex.plugins.RxJavaPlugins
 import kotlinx.coroutines.*
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.CoroutineContext
 
 class CoroutineScheduler(private val context: CoroutineContext = Dispatchers.IO) : Scheduler() {
+
 
     override fun createWorker(): Worker {
         return CoroutineWorker(context)
@@ -24,8 +23,7 @@ class CoroutineScheduler(private val context: CoroutineContext = Dispatchers.IO)
         @Volatile
         private var disposed: Boolean = false
         private val coroutine = CoroutineScope(context)
-        private val scheduleQueue: MpscLinkedQueue<ScheduledRunnable> = MpscLinkedQueue()
-        private val wip = AtomicInteger()
+        private val delayCoroutine = CoroutineScope(Dispatchers.Unconfined)
 
         private val seqCountDownLatch = AtomicReference<CountDownLatch?>()
         override fun schedule(runnable: Runnable): Disposable {
@@ -67,8 +65,7 @@ class CoroutineScheduler(private val context: CoroutineContext = Dispatchers.IO)
             }
             val sequentialDisposable = SequentialDisposable()
             val decoratedRun = ScheduledRunnable(RxJavaPlugins.onSchedule(runnable))
-            scheduleQueue.offer(decoratedRun)
-            coroutine.launch {
+            val job = delayCoroutine.launch {
                 try {
                     if (l > 0) {
                         delay(timeUnit.toMillis(l))
@@ -81,7 +78,7 @@ class CoroutineScheduler(private val context: CoroutineContext = Dispatchers.IO)
                     RxJavaPlugins.onError(e)
                 }
             }
-            sequentialDisposable.replace(decoratedRun)
+            sequentialDisposable.replace(CoroutineDispose(job, decoratedRun))
             return sequentialDisposable
         }
 
@@ -89,6 +86,7 @@ class CoroutineScheduler(private val context: CoroutineContext = Dispatchers.IO)
             if (!disposed) {
                 disposed = true
                 coroutine.cancel()
+                delayCoroutine.cancel()
             }
         }
 
@@ -114,8 +112,7 @@ class CoroutineScheduler(private val context: CoroutineContext = Dispatchers.IO)
     }
 
     private class ScheduledRunnable(
-        val actual: Runnable,
-        val time: Long = 0
+        val actual: Runnable
     ) : AtomicBoolean(), Runnable, Disposable {
         override fun isDisposed(): Boolean = get()
 
