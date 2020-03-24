@@ -1,16 +1,4 @@
 
-
-String localRepo() {
-    if (hasProperty("LOCAL_REPO")) {
-        return LOCAL_REPO
-    }
-    if (System.getenv("LOCAL_REPO") != null) {
-        return System.getenv("LOCAL_REPO")
-    }
-    return new File(rootDir, "repository").toURI().toString()
-}
-def localRepo = localRepo()
-
 apply plugin: 'maven'
 
 task sourceJar(type: Jar) {
@@ -24,7 +12,7 @@ artifacts {
 uploadArchives {
     repositories.mavenDeployer {
         // 配置本地仓库路径，项目根目录下的repository目录中
-        repository(url: localRepo)
+        repository(url: local_repo)
         pom.groupId = "com.sjianjun"// 唯一标识（通常为模块包名，也可以任意）
         pom.artifactId = project.name.toLowerCase() // 项目名称（通常为类库模块名称，也可以任意）
         pom.version = "0.0.11" // 版本号
