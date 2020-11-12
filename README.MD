@@ -56,7 +56,7 @@ class MainActivity : AppCompatActivity(),AutoDispose {
 ```
 
 ## rxjava 协程调度器扩展。拥有更好的并发性能。
-
+> 实际测试并没有什么卵用……用了协程就不用用Rx了，协程配合flow效果更好。
 ### 添加依赖
 ```groovy
 dependencies {
